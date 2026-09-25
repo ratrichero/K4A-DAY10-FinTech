@@ -1,9 +1,9 @@
 # Danh Sách Thành Viên & Báo Cáo Phân Công Nhóm
 
-- **Tên Nhóm:** `K4-L3-DAY10-DataPipeline`
-- **Mã Nhóm / Lớp:** `K4-L3-DAY10`
-- **Tên Repository Nộp Bài:** `K4-L3-DAY10-DataPipeline`
-- **GitHub URL:** `https://github.com/ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability`
+- **Tên Nhóm:** `FinTech`
+- **Mã Nhóm / Lớp:** `K4-L3`
+- **Tên Repository Nộp Bài:** `K4A-DAY10-FinTech`
+- **GitHub URL:** `https://github.com/ratrichero/K4A-DAY10-FinTech`
 
 ---
 
@@ -11,10 +11,10 @@
 
 | STT | Họ và tên | MSSV | Email | Vai trò & Phân công công việc | Báo cáo cá nhân |
 |---:|---|---|---|---|---|
-| 1 | Tạ Việt Cường | 2A202602560 | cuongtv@vinuni.edu.vn | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`, `tests/`) | [`report/2A202602560_TaVietCuong.md`](../report/2A202602560_TaVietCuong.md) |
-| 2 | Vũ Minh Hoàng | 2A202602570 | minhhoangvu111@gmail.com | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | `report/<MSSV2>_HoTen.md` |
+| 1 | Tạ Việt Cường | 2A202602560 | ratrichero@gmail.com | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`, `tests/`) | [`report/2A202602560_TaVietCuong.md`](../report/2A202602560_TaVietCuong.md) |
+| 2 | Vũ Minh Hoàng | 2A202602371 | minhhoangvu111@gmail.com | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | [`report/2A202602371_VuMinhHoang.md`](../report/2A202602371_VuMinhHoang.md) |
 | 3 | Phùng Gia Khánh | 2A202602585 | phunggiakhanh030405@gmail.com | RAG & Vector Index (`retrieval/index.py`, `embeddings.py`, ChromaDB) | [`report/2A202602585_PhungGiaKhanh.md`](../report/2A202602585_PhungGiaKhanh.md) |
-| 4 | Trần Thị Thu Trang | 2A202602581 | trangttt@vinuni.edu.vn | Observability & Evaluation (`quality.py` GX 1.x, `testset.py`, reporting) | [`report/2A202602581_TranThiThuTrang.md`](../report/2A202602581_TranThiThuTrang.md) |
+| 4 | Trần Thị Thu Trang | 2A202602581 | trangdhsp@gmail.com | Observability & Evaluation (`quality.py` GX 1.x, `testset.py`, reporting) | [`report/2A202602581_TranThiThuTrang.md`](../report/2A202602581_TranThiThuTrang.md) |
 
 ---
 
@@ -31,7 +31,7 @@
 - **Điều học được / Đóng góp chính:**
   - Hiểu sâu sắc về thiết kế Idempotent Pipeline, cơ chế kiểm soát chất lượng Great Expectations 1.x và ngăn chặn hiện tượng Silent Failure trong các hệ thống RAG thực tế.
 
-### ## VuMinhHoang-2A202602570
+### ## VuMinhHoang-2A202602371
 - **Vai trò:** Phụ trách Ingestion, Làm sạch & Phục hồi dữ liệu.
 - **Công việc chi tiết đã hoàn thành:**
   - Xây dựng module thu thập Crossref API với cơ chế Fallback offline trong `src/ingestion/crossref.py`.

@@ -7,9 +7,9 @@
 | Họ và tên | Trần Thị Thu Trang |
 | MSSV | 2A202602581 |
 | Khóa/Lớp | K4 |
-| Tên nhóm | [Điền sau] |
+| Tên nhóm | FinTech (K4-L3) |
 | Vai trò chính | Observability & Evaluation Lead (Thành viên 4) |
-| Repository | [Điền sau] |
+| Repository | https://github.com/ratrichero/K4A-DAY10-FinTech.git |
 | Ngày hoàn thành | 2026-09-25 (đang tiếp tục cập nhật) |
 
 ## 2. Vai trò và phạm vi công việc

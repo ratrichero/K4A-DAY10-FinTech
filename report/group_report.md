@@ -5,16 +5,16 @@
 | Thông tin         | Nội dung                  |
 | ------------------ | -------------------------- |
 | Khóa/Lớp         | AI-ENGINEER-K4 (VinUni) |
-| Tên nhóm         | K4-L3-DAY10-DataPipeline |
-| Repository         | [ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability](https://github.com/ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability) |
+| Tên nhóm         | FinTech (K4-L3) |
+| Repository         | [ratrichero/K4A-DAY10-FinTech](https://github.com/ratrichero/K4A-DAY10-FinTech) |
 | Ngày hoàn thành | 2026-09-25               |
 
 ### Thành viên và phân công
 
 | STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu | Báo cáo cá nhân |
 | --: | --- | --- | --- | --- | --- |
-| 1 | Tạ Việt Cường | 2A202602560 | Pipeline Lead & System Integrator | `src/core/`, `src/pipelines/`, `script/`, `tests/`, `docs/TEAM.md`, `report/group_report.md` | [`report/2A202602560_TaVietCuong.md`](2A202602560_TaVietCuong.md) |
-| 2 | Vũ Minh Hoàng | 2A202602570 | Data Foundation & Ingestion Owner | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/ingestion/corruption.py` | [Cập nhật sau] |
+| 1 | Tạ Việt Cường | 2A202602560 | Pipeline Lead & System Integrator | `src/core/`, `src/pipelines/`, `script/`, `tests/`, `src/app.py`, `start_app.bat`, `docs/TEAM.md`, `docs/DEMO_GUIDE.md`, `report/group_report.md` | [`report/2A202602560_TaVietCuong.md`](2A202602560_TaVietCuong.md) |
+| 2 | Vũ Minh Hoàng | 2A202602371 | Data Foundation & Recovery Owner | `src/ingestion/` (`crossref.py`, `cleaning.py`, `corruption.py`), raw data snapshot | [`report/2A202602371_VuMinhHoang.md`](2A202602371_VuMinhHoang.md) |
 | 3 | Phùng Gia Khánh | 2A202602585 | RAG & Vector Index Specialist | `src/retrieval/` (`embeddings.py`, `index.py`, `qa.py`, `agent.py`) | [`report/2A202602585_PhungGiaKhanh.md`](2A202602585_PhungGiaKhanh.md) |
 | 4 | Trần Thị Thu Trang | 2A202602581 | Observability & Evaluation Lead | `src/observability/` (`quality.py`, `reporting.py`), `src/evaluation/testset.py` | [`report/2A202602581_TranThiThuTrang.md`](2A202602581_TranThiThuTrang.md) |
 
@@ -22,11 +22,11 @@
 
 ## 2. Tóm tắt kết quả
 
-Nhóm đã hoàn thành trọn vẹn 100% khối lượng công việc của 6 Checkpoints (CP0 đến CP6) cùng 2 hạng mục điểm thưởng Bonus (+10 điểm: B1 Web Dashboard Streamlit và B3 Pytest CI Suite 8/8 tests pass).
+Nhóm đã hoàn thành trọn vẹn 100% khối lượng công việc của 7 Checkpoints (CP0 đến CP6) cùng 2 hạng mục điểm thưởng Bonus (+10 điểm: B1 Web Dashboard Streamlit và B3 Pytest CI Suite 8/8 tests pass).
 
 Toàn bộ hệ thống luồng dữ liệu end-to-end đã được thiết kế và kiểm chứng thực nghiệm chặt chẽ:
 1. **Baseline Pipeline:** Thu thập 24 bản ghi khoa học từ Crossref API (hỗ trợ offline snapshot fallback), làm sạch chuẩn hóa với trường `text_for_embedding` 5 dòng, kiểm soát chất lượng qua Great Expectations 1.x (đạt 6/6 checks) và Freshness SLA (100% tươi mới). Đánh chỉ mục ChromaDB (`papers-baseline`) và đánh giá trên bộ test 10 câu hỏi đạt điểm tuyệt đối: **Retrieval Hit Rate = 1.0000**, **Mean Token F1 = 1.0000**, **Judge Accuracy = 1.0000**.
-2. **Synthetic Corruption & Silent Failure:** Tiêm 6 kịch bản lỗi có chủ đích (xóa summary, cắt ngắn title, lùi ngày xuất bản, drop bài mới, nhân bản trùng lặp, nhiễu ký tự). Kết quả thực nghiệm chứng minh đanh thép hiện tượng **Silent Failure**: Mô hình AI không hề văng exception (không crash runtime) nhưng chất lượng trả lời sụp đổ nặng nề — Retrieval Hit Rate giảm từ **1.0000 xuống 0.5000 (-50%)**, Token F1 giảm xuống **0.5286 (-47.1%)**. Cổng kiểm soát Great Expectations 1.x đã phát hiện chính xác các vi phạm dữ liệu này (FAIL 4/6 checks passed).
+2. **Synthetic Corruption & Silent Failure:** Tiêm 6 kịch bản lỗi có chủ đích (xóa summary, cắt ngắn title, lùi ngày xuất bản, drop bài mới, nhân bản trùng lặp, nhiễu ký tự). Kết quả thực nghiệm chứng minh đanh thép hiện tượng **Silent Failure**: Mô hình AI không hề văng exception (không crash runtime) nhưng chất lượng trả lời sụp đổ nặng nề — Retrieval Hit Rate giảm từ **1.0000 xuống 0.5000 (-50%)**, Token F1 giảm xuống **0.5286 (-47.1%)**. Cổng kiểm soát Great Expectations 1.x đã phát hiện chính xác các vi phạm dữ liệu này (Quality Gate FAIL: chỉ 4/6 checks pass — vi phạm tính unique của `paper_id` và độ dài `summary`).
 3. **Idempotent Repair:** Phục hồi toàn vẹn dữ liệu từ nguồn bất biến `data/raw/crossref_records.json`. Chất lượng truy vấn trên tập phục hồi quay lại tiệm cận mức Baseline (Hit Rate = 1.0000, F1 = 1.0000, GX Gate 6/6 pass).
 
 ---
@@ -112,7 +112,7 @@ Crossref REST API (Offline Snapshot Fallback)
 | Lệnh             | Trạng thái | Thời điểm chạy gần nhất | Bằng chứng |
 | ----------------- | ----------------------------------------------- | ----------------------------- | ------------------------------------ |
 | Baseline pipeline | Thành công (Exit code 0) | 2026-09-25 16:21:26 | `data/reports/phase1_report.md`, `baseline_metrics.json` |
-| Corruption flow   | Thành công (Exit code 0) | 2026-09-25 16:45:00 | `data/reports/corruption_report.md`, `corruption_log.json` |
+| Corruption flow   | Thành công (Exit code 0) | 2026-09-25 16:56:56 | `data/reports/corruption_report.md`, `corruption_log.json` (generated_at) |
 | Pytest Test Suite | Thành công (8/8 passed) | 2026-09-25 16:46:44 | `tests/`, task-357 execution log (213.97s) |
 | Streamlit Web App | Đang hoạt động | 2026-09-25 17:16:51 | `http://localhost:8501`, `start_app.bat` |
 
@@ -226,10 +226,10 @@ Crossref REST API (Offline Snapshot Fallback)
 
 | Corruption | Cách tạo | Record bị tác động | Quality signal kỳ vọng | Tác động thực tế | Cách repair |
 | ------------------ | ---------- | ---------------------: | ------------------------ | --------------------- | -------------- |
-| 1. Blank summary | Gán rỗng trường tóm tắt | 3 | GX summary length FAIL | Vector drift, mất context tóm tắt | Nạp lại từ Raw snapshot |
-| 2. Truncate title | Cắt tiêu đề còn 5 ký tự | 3 | Semantic search lệch | Trượt retrieval câu hỏi title | Nạp lại từ Raw snapshot |
+| 1. Blank summary | Gán rỗng trường tóm tắt (mỗi dòng thứ 4) | 5 | GX summary length FAIL | Vector drift, mất context tóm tắt | Nạp lại từ Raw snapshot |
+| 2. Truncate title | Cắt tiêu đề xuống dưới 8 ký tự | 3 | Semantic search lệch | Trượt retrieval câu hỏi title | Nạp lại từ Raw snapshot |
 | 3. Stale date | Lùi ngày xuất bản >365 ngày | 3 | Freshness monitor cảnh báo | Tăng số lượng tài liệu cũ | Nạp lại từ Raw snapshot |
-| 4. Drop latest records | Xóa 3 bản ghi mới nhất | 3 | Table row count giảm | Trượt vĩnh viễn 3 câu hỏi liên quan | Nạp lại từ Raw snapshot |
+| 4. Drop latest records | Xóa 5 bản ghi mới nhất (20% corpus) | 5 | Table row count giảm | Trượt vĩnh viễn các câu hỏi liên quan | Nạp lại từ Raw snapshot |
 | 5. Duplicate rows | Nhân bản 2 dòng đã có | 2 | GX paper_id unique FAIL | Phá vỡ ràng buộc định danh | Nạp lại từ Raw snapshot |
 | 6. Inject noise | Chèn ký tự rác vào embedding text | 3 | Vector embedding sai lệch | Giảm độ tương đồng cosine | Nạp lại từ Raw snapshot |
 
@@ -246,8 +246,8 @@ Crossref REST API (Offline Snapshot Fallback)
 | `mean_token_f1`        |   1.0000 |    0.5286 |   1.0000 |                  -0.4714 |         +0.4714 | Độ chính xác câu trả lời giảm sâu do trượt retrieval |
 | `judge_accuracy`       |   1.0000 |    0.5000 |   1.0000 |                  -0.5000 |         +0.5000 | AI tự tin trả lời sai (Silent Failure) |
 | `mean_judge_score`     |     5.00 |      3.00 |     5.00 |                    -2.00 |           +2.00 | Điểm chất lượng sụt giảm 2 thang điểm |
-| Quality checks pass/fail | 6/6 PASS | 4/6 FAIL  | 6/6 PASS |                   2 fail |        Khôi phục| Bắt trúng lỗi unique và length |
-| Freshness status         |  is_fresh|   is_fresh|  is_fresh|          3 stale records |      100% fresh | SLA vẫn đạt do tỷ lệ stale < 25% |
+| Quality checks pass/fail | 6/6 PASS | 4/6 PASS (2 FAIL) | 6/6 PASS | 2 checks vi phạm | Phục hồi 6/6 PASS | Bắt trúng vi phạm unique `paper_id` (19.05% dup) và `summary` < 30 ký tự (6 dòng rỗng) |
+| Freshness status         | FRESH (100%) | FRESH (85.71%) | FRESH (100%) | 3 stale records (14.29%) | Phục hồi 100% fresh | SLA vẫn đạt: tỷ lệ stale 14.29% < ngưỡng 25% |
 
 ### Hai kết luận nhân quả thực nghiệm quan trọng:
 1. **Minh chứng Silent Failure:** Khi các trường dữ liệu bị can thiệp (xóa abstract, drop bài, nhiễu văn bản), mô hình RAG vẫn sinh ra câu trả lời mượt mà mà không có bất kỳ ngoại lệ (exception) runtime nào, nhưng `retrieval_hit_rate` sụt giảm thẳng đứng từ 100% xuống 50% kéo theo `mean_token_f1` giảm từ 1.0000 xuống 0.5286.

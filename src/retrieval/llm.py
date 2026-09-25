@@ -8,6 +8,20 @@ from langchain_openai import ChatOpenAI
 from core.config import Settings, normalized_provider, require_llm_credentials
 
 
+def _build_mock_llm():
+    from langchain_core.language_models.fake_chat_models import FakeListChatModel
+
+    class ToolCompatibleFakeListChatModel(FakeListChatModel):
+        """Deterministic offline model that can be bound to agent tools."""
+
+        def bind_tools(self, tools, *, tool_choice=None, **kwargs):  # noqa: ANN001, ANN003
+            return self
+
+    return ToolCompatibleFakeListChatModel(
+        responses=["This is a mock response from the scholarly corpus."]
+    )
+
+
 def build_llm(settings: Settings, temperature: float = 0.0):
     provider = normalized_provider(settings)
     require_llm_credentials(settings)
@@ -57,7 +71,5 @@ def build_llm(settings: Settings, temperature: float = 0.0):
             temperature=temperature,
         )
     if provider == "mock":
-        from langchain_core.language_models.fake_chat_models import FakeListChatModel
-
-        return FakeListChatModel(responses=["This is a mock response from the scholarly corpus."])
+        return _build_mock_llm()
     raise RuntimeError(f"Unsupported LLM provider: {settings.llm_provider}")

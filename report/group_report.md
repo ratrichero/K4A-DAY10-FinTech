@@ -11,12 +11,12 @@
 
 ### Thành viên và phân công
 
-| STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu |
-| --: | --- | --- | --- | --- |
-| 1 | Tạ Việt Cường | 2A202602560 | Pipeline Lead & System Integrator | `src/core/`, `src/pipelines/`, `script/`, `tests/`, `docs/TEAM.md`, `report/group_report.md` |
-| 2 | Thành viên 2 | [MSSV2] | Data Foundation & Ingestion Owner | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/ingestion/corruption.py` |
-| 3 | Thành viên 3 | [MSSV3] | RAG & Vector Index Specialist | `src/retrieval/` (`embeddings.py`, `index.py`, `qa.py`, `agent.py`) |
-| 4 | Thành viên 4 | [MSSV4] | Observability & Evaluation Lead | `src/observability/` (`quality.py`, `reporting.py`), `src/evaluation/testset.py` |
+| STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu | Báo cáo cá nhân |
+| --: | --- | --- | --- | --- | --- |
+| 1 | Tạ Việt Cường | 2A202602560 | Pipeline Lead & System Integrator | `src/core/`, `src/pipelines/`, `script/`, `tests/`, `docs/TEAM.md`, `report/group_report.md` | [`report/2A202602560_TaVietCuong.md`](2A202602560_TaVietCuong.md) |
+| 2 | Vũ Minh Hoàng | 2A202602570 | Data Foundation & Ingestion Owner | `src/ingestion/crossref.py`, `src/ingestion/cleaning.py`, `src/ingestion/corruption.py` | [Cập nhật sau] |
+| 3 | Phùng Gia Khánh | 2A202602585 | RAG & Vector Index Specialist | `src/retrieval/` (`embeddings.py`, `index.py`, `qa.py`, `agent.py`) | [`report/2A202602585_PhungGiaKhanh.md`](2A202602585_PhungGiaKhanh.md) |
+| 4 | Trần Thị Thu Trang | 2A202602581 | Observability & Evaluation Lead | `src/observability/` (`quality.py`, `reporting.py`), `src/evaluation/testset.py` | [`report/2A202602581_TranThiThuTrang.md`](2A202602581_TranThiThuTrang.md) |
 
 ---
 

@@ -51,9 +51,19 @@ def build_agent(settings: Settings, index: LocalEmbeddingIndex):
 
 
 def run_agent_question(agent: Any, question: str) -> str:
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("question must be a non-empty string.")
     result = agent.invoke({"messages": [{"role": "user", "content": question}]})
     messages = result.get("messages", [])
     if not messages:
         return ""
     final_message = messages[-1]
-    return getattr(final_message, "content", str(final_message))
+    content = getattr(final_message, "content", str(final_message))
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            str(block.get("text", "")) if isinstance(block, dict) else str(block)
+            for block in content
+        )
+    return str(content)

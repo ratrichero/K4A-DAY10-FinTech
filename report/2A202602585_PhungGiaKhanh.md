@@ -5,7 +5,7 @@
 | Thông tin | Nội dung |
 |---|---|
 | Họ và tên | Phùng Gia Khánh |
-| MSSV | `[CẦN ĐIỀN]` |
+| MSSV | 2A202602585 |
 | Khóa/Lớp | K4 |
 | Tên nhóm | FinTech |
 | Vai trò chính | RAG & Agent Specialist |
@@ -84,4 +84,4 @@ Các metric end-to-end `retrieval_hit_rate`, `mean_token_f1`, `judge_accuracy` v
 - [x] Kết luận kỹ thuật có test để đối chiếu.
 - [x] Không chứa `.env`, API key, token hoặc secret.
 - [x] Không nhận là đã hoàn thành các pipeline/metric chưa được tích hợp.
-- [ ] Đã điền MSSV và đổi tên file theo quy ước `<MSSV>_PhungGiaKhanh.md` trước khi nộp.
+- [x] Đã điền MSSV và đổi tên file theo quy ước `<MSSV>_PhungGiaKhanh.md` trước khi nộp.

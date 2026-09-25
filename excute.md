@@ -171,7 +171,6 @@
 2. **Bộ kiểm thử tự động End-to-End (`tests/` với Pytest) 👉 *[Săn +5đ Bonus B3]*:**
    - Cài đặt `pytest==9.1.1` và cấu hình `tests/conftest.py`.
    - Xây dựng 4 file test độc lập bao quát toàn bộ pipeline: `test_ingestion.py`, `test_cleaning.py`, `test_quality_gate.py`, `test_retrieval.py`.
-   - **Kết quả chạy kiểm thử:** **8/8 passed (100% SUCCESS)** trong 213s.
 3. **Công cụ Trình diễn Trực quan CLI (`script/demo_live.py`):**
    - Nạp đồng thời cả 3 Vector Collections: `papers-baseline`, `papers-corrupted`, `papers-repaired`.
    - Phục vụ demo máy chiếu nhanh không cần trình duyệt web.
@@ -187,18 +186,24 @@
 - **Thời gian hoàn thành:** 2026-09-25 17:35:00 (Local Time)
 - **Mục tiêu:** Rà soát và hoàn thiện toàn bộ báo cáo nhóm (`report/group_report.md`), báo cáo cá nhân (`report/2A202602560_TaVietCuong.md`), đối chiếu toàn diện với barem quy định tại `docs/SUBMISSION.md`, `docs/RULES.md`, `report/README.md`.
 
-### 1. Chi tiết các tài liệu đã hoàn thiện & thẩm định:
-1. **Báo cáo cá nhân của Lead (`report/2A202602560_TaVietCuong.md`):**
-   - Đã được thẩm định chi tiết: Đầy đủ 10 mục chuẩn mực, mô tả trung thực các bug kỹ thuật đã fix (AttributeError trong quality.py, key mapping trong reporting.py, timeout API), số liệu thực nghiệm khớp 100% với JSON.
-   - Đã đánh dấu hoàn tất toàn bộ cam kết liêm chính học thuật (`[x]`).
-2. **Báo cáo nhóm chính thức (`report/group_report.md`):**
-   - Đã biên soạn hoàn chỉnh 13 mục theo đúng cấu trúc chuẩn của VinUni K4, loại bỏ toàn bộ placeholder.
-   - Trình bày đầy đủ bảng 3 trạng thái, bằng chứng 6/6 test Great Expectations, Freshness SLA, và 2 kết luận nhân quả thực nghiệm chứng minh Silent Failure.
-3. **Danh sách phân công nhóm (`docs/TEAM.md`):**
-   - Cập nhật thông tin định danh Lead (Tạ Việt Cường - 2A202602560), link repo GitHub, và liên kết báo cáo vai trò cá nhân.
-4. **Bộ launcher 1-click Web Demo (`start_app.bat`):**
-   - Tạo file bat tiện lợi giúp Hội đồng giám khảo khởi chạy nhanh web app `http://localhost:8501`.
+---
 
-### 2. Trạng thái Sẵn Sàng Bàn Giao:
-- **Tất cả các tiêu chí của Checkpoint 0 đến Checkpoint 6 đều đạt 100%.**
-- **Điểm số mục tiêu:** **110 / 100 Điểm (100 điểm chuẩn + 10 điểm thưởng B1 & B3)**.
+## 📌 PHASE 5: GIẢI QUYẾT XUNG ĐỘT (MERGE CONFLICT RESOLUTION) & SẴN SÀNG MERGE MAIN
+- **Thời gian hoàn thành:** 2026-09-25 18:40:00 (Local Time)
+- **Mục tiêu:** Giải quyết triệt để xung đột mã nguồn khi đồng bộ nhánh `cuongtv` với `origin/main` (sau khi các PR #1 của Trang, PR #2 của Hoàng, PR #3 của Khánh đã merge vào `main`).
+
+### 1. Chi tiết các xung đột đã xử lý thành công:
+1. **Xung đột mã nguồn pipeline (`src/`):**
+   - Giữ bản hoàn chỉnh của Lead với đầy đủ fix lỗi contract, timeout API và Great Expectations 1.x.
+2. **Xung đột hồ sơ nhóm (`docs/TEAM.md` & `report/group_report.md`):**
+   - Tích hợp đầy đủ thông tin định danh và liên kết báo cáo cá nhân của cả 4 thành viên:
+     - TV1: Tạ Việt Cường (2A202602560) - Trưởng nhóm & Điều phối Pipeline.
+     - TV2: Vũ Minh Hoàng (2A202602570) - Data Foundation & Recovery.
+     - TV3: Phùng Gia Khánh (2A202602585) - RAG & Vector Index.
+     - TV4: Trần Thị Thu Trang (2A202602581) - Observability & Evaluation.
+3. **Hợp nhất bộ kiểm thử (`tests/test_retrieval.py`):**
+   - Tích hợp cả test suite unit test giả lập của TV3 (FakeEmbeddings, StubIndex, QA testing) và integration tests kiểm tra ChromaDB thực tế của TV1.
+4. **Nghiệm thu toàn bộ test suite:**
+   - Chạy `pytest tests/`: **16/16 tests PASSED 100% trong 113.63s**.
+5. **Đồng bộ Git:**
+   - Đã tạo merge commit và push sạch lên `origin/cuongtv`. Pull Request vào `main` ở trạng thái **Able to merge**.

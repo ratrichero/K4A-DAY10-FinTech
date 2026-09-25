@@ -6,10 +6,10 @@
 | ------------------ | ------------------------------------------------------------------------------ |
 | Họ và tên         | Vũ Minh Hoàng                                                                  |
 | MSSV               | 2A202602371                                                                    |
-| Khóa/Lớp           | K4 / K4A-FinTech                                                               |
+| Khóa/Lớp           | K4-L3                                                              |
 | Tên nhóm           | K4A-DAY10-FinTech                                                              |
 | Vai trò chính      | Thành viên 2 — Data Foundation & Recovery Owner (Kỹ sư Dữ liệu)               |
-| Repository         | https://github.com/ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability.git|
+| Repository         | https://github.com/ratrichero/K4A-DAY10-FinTech                    |
 | Ngày hoàn thành   | 2026-09-25                                                                     |
 
 ---
@@ -136,10 +136,10 @@
 
 | Metric/signal | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
 | ------------- | --------:| ---------:| --------:| -------------------- |
-| `retrieval_hit_rate` | 1.00 | 0.60 | 1.00 | Data corruption làm sụt giảm 40% khả năng truy vết do mất dữ liệu mới & tiêu đề bị truncate. |
-| `mean_token_f1` | 0.85 | 0.42 | 0.85 | Token F1 giảm mạnh khi summary bị xóa rỗng hoặc chèn nhiễu. Phục hồi hoàn toàn sau Repair. |
+| `retrieval_hit_rate` | 1.00 | 0.50 | 1.00 | Corruption làm sụt giảm 50% khả năng truy hồi (bị drop 5 bài mới nhất, cắt ngắn tiêu đề, nhiễu văn bản). Khôi phục hoàn toàn sau Repair. |
+| `mean_token_f1` | 1.00 | 0.5286 | 1.00 | Token F1 sụt sâu khi summary bị xóa rỗng và corpus bị nhiễu làm trượt retrieval. Phục hồi tuyệt đối sau Repair. |
 | Quality checks (GX 1.x) | `True` | `False` | `True` | Data Quality Gate báo động chính xác khi phát hiện dòng trùng lặp và summary < 30 ký tự. |
-| Freshness status | `Fresh` | `Stale Alert` | `Fresh` | Cảnh báo mốc dữ liệu kích hoạt đúng khi ngày xuất bản bị lùi 365 ngày. |
+| Freshness status | `Fresh` (100%) | `Fresh` (85.71%) | `Fresh` (100%) | `stale_date` tạo 3 dòng cũ (14.29% > 180 ngày) nhưng chưa vượt ngưỡng 25% nên SLA vẫn đạt; repair trả về 100% fresh. |
 
 ---
 

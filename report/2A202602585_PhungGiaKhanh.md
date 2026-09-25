@@ -9,7 +9,7 @@
 | Khóa/Lớp | K4 |
 | Tên nhóm | FinTech |
 | Vai trò chính | RAG & Agent Specialist |
-| Repository | `K4A-DAY10-FinTech` |
+| Repository | [`K4A-DAY10-FinTech`](https://github.com/ratrichero/K4A-DAY10-FinTech) |
 | Ngày hoàn thành | 2026-09-25 |
 
 ## 2. Vai trò và phạm vi công việc

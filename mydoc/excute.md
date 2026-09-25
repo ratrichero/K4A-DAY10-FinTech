@@ -198,7 +198,7 @@
 2. **Xung đột hồ sơ nhóm (`docs/TEAM.md` & `report/group_report.md`):**
    - Tích hợp đầy đủ thông tin định danh và liên kết báo cáo cá nhân của cả 4 thành viên:
      - TV1: Tạ Việt Cường (2A202602560) - Trưởng nhóm & Điều phối Pipeline.
-     - TV2: Vũ Minh Hoàng (2A202602570) - Data Foundation & Recovery.
+     - TV2: Vũ Minh Hoàng (2A202602371) - Data Foundation & Recovery.
      - TV3: Phùng Gia Khánh (2A202602585) - RAG & Vector Index.
      - TV4: Trần Thị Thu Trang (2A202602581) - Observability & Evaluation.
 3. **Hợp nhất bộ kiểm thử (`tests/test_retrieval.py`):**

@@ -20,17 +20,36 @@ class AnswerResult:
 def _extract_answer(question: str, top_result: SearchResult) -> str:
     lowered = question.lower()
     metadata = top_result.metadata
-    if "who authored" in lowered or "list the authors" in lowered:
-        return metadata["authors_joined"]
-    if "when was" in lowered or "publication date" in lowered or "published on" in lowered:
-        return metadata["published"]
-    if "what categories" in lowered:
-        return metadata["categories_joined"]
-    return first_sentence(metadata["summary"])
+    if any(
+        phrase in lowered
+        for phrase in ("who authored", "list the authors", "who are the authors", "ai là tác giả", "tác giả của")
+    ):
+        return str(metadata.get("authors_joined", "")) or "Unknown"
+    if any(
+        phrase in lowered
+        for phrase in ("when was", "publication date", "published on", "công bố", "xuất bản", "năm nào")
+    ):
+        return str(metadata.get("published", "")) or "Unknown"
+    if any(
+        phrase in lowered
+        for phrase in (
+            "what categories",
+            "which categories",
+            "what category",
+            "thuộc lĩnh vực",
+            "thuộc danh mục",
+            "chủ đề nào",
+        )
+    ):
+        return str(metadata.get("categories_joined", "")) or "Unknown"
+    summary = str(metadata.get("summary", ""))
+    return first_sentence(summary) if summary else "I don't know from the indexed corpus."
 
 
 def answer_question(question: str, settings: Settings, index: LocalEmbeddingIndex, top_k: int | None = None) -> AnswerResult:
-    title_match = re.search(r"'([^']+)'", question)
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("question must be a non-empty string.")
+    title_match = re.search(r"['\"]([^'\"]+)['\"]", question)
     exact = index.lookup(title_match.group(1)) if title_match else None
     retrieved = index.search(question, top_k=top_k)
     if exact:

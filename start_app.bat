@@ -7,5 +7,5 @@ echo Nhan Ctrl+C de dung ung dung bat cu luc nao.
 echo ======================================================================
 
 set PYTHONIOENCODING=utf-8
-.\.venv\Scripts\python.exe -m streamlit run src/app.py --server.port 8501 --server.fileWatcherType none
+.\.venv\Scripts\python.exe -m streamlit run src/app.py --server.port 8501
 pause

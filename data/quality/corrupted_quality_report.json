@@ -1,0 +1,128 @@
+{
+  "report_name": "corrupted",
+  "success": false,
+  "total_checks": 6,
+  "passed_checks": 4,
+  "failed_checks": 2,
+  "checks": [
+    {
+      "expectation": "expect_table_row_count_to_be_between",
+      "column": "table",
+      "success": true,
+      "result": {
+        "observed_value": 21
+      }
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "paper_id",
+      "success": true,
+      "result": {
+        "element_count": 21,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "expectation": "expect_column_values_to_be_unique",
+      "column": "paper_id",
+      "success": false,
+      "result": {
+        "element_count": 21,
+        "unexpected_count": 4,
+        "unexpected_percent": 19.047619047619047,
+        "partial_unexpected_list": [
+          "10.28932/jutisi.v12i2.13099",
+          "10.21203/rs.3.rs-10423755/v1",
+          "10.28932/jutisi.v12i2.13099",
+          "10.21203/rs.3.rs-10423755/v1"
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 19.047619047619047,
+        "unexpected_percent_nonmissing": 19.047619047619047,
+        "partial_unexpected_counts": [
+          {
+            "value": "10.21203/rs.3.rs-10423755/v1",
+            "count": 2
+          },
+          {
+            "value": "10.28932/jutisi.v12i2.13099",
+            "count": 2
+          }
+        ],
+        "partial_unexpected_index_list": [
+          0,
+          1,
+          19,
+          20
+        ]
+      }
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "title",
+      "success": true,
+      "result": {
+        "element_count": 21,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "expectation": "expect_column_values_to_not_be_null",
+      "column": "text_for_embedding",
+      "success": true,
+      "result": {
+        "element_count": 21,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      }
+    },
+    {
+      "expectation": "expect_column_value_lengths_to_be_between",
+      "column": "summary",
+      "success": false,
+      "result": {
+        "element_count": 21,
+        "unexpected_count": 6,
+        "unexpected_percent": 28.57142857142857,
+        "partial_unexpected_list": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 28.57142857142857,
+        "unexpected_percent_nonmissing": 28.57142857142857,
+        "partial_unexpected_counts": [
+          {
+            "value": "",
+            "count": 6
+          }
+        ],
+        "partial_unexpected_index_list": [
+          1,
+          5,
+          9,
+          13,
+          17,
+          20
+        ]
+      }
+    }
+  ]
+}

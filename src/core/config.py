@@ -64,6 +64,7 @@ class Settings:
     max_results: int
     top_k: int
     freshness_threshold_days: int
+    freshness_sla_percent: float
     refresh_source: bool
     refresh_test_set: bool
     paths: Paths
@@ -133,6 +134,7 @@ def load_settings(project_dir: Path | None = None) -> Settings:
         max_results=24,
         top_k=4,
         freshness_threshold_days=freshness_threshold_days,
+        freshness_sla_percent=75.0,
         refresh_source=os.getenv("REFRESH_SOURCE", "").lower() in {"1", "true", "yes"},
         refresh_test_set=os.getenv("REFRESH_TEST_SET", "").lower() in {"1", "true", "yes"},
         paths=paths,

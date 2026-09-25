@@ -1,158 +1,153 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-import json
-import logging
-from pathlib import Path
+import math
+from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
 
-from ingestion.cleaning import build_clean_dataframe
-from ingestion.crossref import load_raw_records
+from core.utils import ensure_parent, write_json
 
-logger = logging.getLogger(__name__)
+_NOISE_TOKENS = " qzxjwkvv noiseplaceholder zqxjkw"
 
 
-def corrupt_clean_dataframe(df: pd.DataFrame, output_log_path: Path | str) -> pd.DataFrame:
-    """Simulate 6 data corruption scenarios on a clean DataFrame.
+def _rebuild_text_for_embedding(row: pd.Series) -> str:
+    """Giu dung dinh dang 5 dong theo Data Contract trong mydoc/nhiemvu.md."""
+    return (
+        f"Title: {row['title']}\n"
+        f"Authors: {row['authors_joined']}\n"
+        f"Published: {row['published']}\n"
+        f"Categories: {row['categories_joined']}\n"
+        f"Summary: {row['summary']}"
+    ).strip()
 
-    Scenarios:
-    1. Drop latest records: Drop newest 20% records.
-    2. Blank summary: Clear summary on selected rows.
-    3. Inject noise: Add random noise/gibberish to summary.
-    4. Truncate title: Shorten title to < 8 chars.
-    5. Stale date: Shift published date back 365 days.
-    6. Duplicate rows: Duplicate selected rows.
 
-    Saves corruption audit log to output_log_path.
+def _recompute_derived_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df["summary_chars"] = df["summary"].fillna("").astype(str).str.len()
+    df["text_for_embedding"] = df.apply(_rebuild_text_for_embedding, axis=1)
+    return df
+
+
+def corrupt_clean_dataframe(df: pd.DataFrame, output_log_path) -> pd.DataFrame:
+    """Tiem 6 kich ban loi vao clean dataframe va ghi corruption log.
+
+    Kich ban (theo mydoc/nhiemvu.md - TV2):
+      1. drop_latest_records : bo 20% bai moi nhat.
+      2. blank_summary       : xoa trang tom tat mot so dong.
+      3. inject_noise        : chen chuoi vo nghia vao tom tat.
+      4. truncate_title      : cat title xuong < 8 ky tu.
+      5. stale_date          : lui `published` ve 365 ngay truoc.
+      6. duplicate_rows      : nhan doi mot so dong.
+
+    Chon vi tri dong deterministic (khong random) de corruption log va ket qua
+    chay lai luon khop nhau (idempotent-friendly).
     """
-    if df.empty:
-        return df.copy()
+    corrupted = df.copy().reset_index(drop=True)
+    scenarios: list[dict[str, Any]] = []
+    rows_before = len(corrupted)
 
-    cdf = df.copy()
-    corruption_logs: list[dict[str, Any]] = []
-
-    # 1. Drop latest records (20% newest)
-    if "published" in cdf.columns:
-        cdf = cdf.sort_values("published", ascending=False).reset_index(drop=True)
-        drop_count = max(1, int(len(cdf) * 0.20))
-        dropped_ids = cdf.iloc[:drop_count]["paper_id"].tolist()
-        cdf = cdf.iloc[drop_count:].reset_index(drop=True)
-        corruption_logs.append({
+    # ---- 1. Drop latest records (df sap xep published giam dan -> head la moi nhat)
+    n_drop = max(1, math.ceil(rows_before * 0.2))
+    dropped_ids = corrupted.head(n_drop)["paper_id"].tolist()
+    corrupted = corrupted.iloc[n_drop:].reset_index(drop=True)
+    scenarios.append(
+        {
             "scenario": "drop_latest_records",
-            "description": f"Dropped newest {drop_count} records",
-            "affected_count": drop_count,
-            "paper_ids": dropped_ids,
-        })
+            "description": f"Dropped the {n_drop} most recent papers (20% of corpus).",
+            "rows_before": rows_before,
+            "rows_affected": n_drop,
+            "affected_paper_ids": dropped_ids,
+        }
+    )
 
-    # 2. Blank summary (empty summary on first 2 remaining rows)
-    if len(cdf) >= 2 and "summary" in cdf.columns:
-        target_ids = [cdf.loc[0, "paper_id"], cdf.loc[1, "paper_id"]]
-        cdf.loc[0, "summary"] = ""
-        cdf.loc[1, "summary"] = ""
-        corruption_logs.append({
+    # ---- 2. Blank summary (moi dong thu 4, dem tu vi tri 1)
+    blank_positions = list(range(1, len(corrupted), 4))
+    blank_ids = corrupted.loc[blank_positions, "paper_id"].tolist()
+    corrupted.loc[blank_positions, "summary"] = ""
+    scenarios.append(
+        {
             "scenario": "blank_summary",
-            "description": "Blanked summary field",
-            "affected_count": len(target_ids),
-            "paper_ids": target_ids,
-        })
+            "description": f"Blanked the summary of {len(blank_positions)} rows (every 4th row).",
+            "rows_affected": len(blank_positions),
+            "affected_paper_ids": blank_ids,
+        }
+    )
 
-    # 3. Inject noise (inject garbage noise into summary of rows 2 & 3)
-    if len(cdf) >= 4 and "summary" in cdf.columns:
-        target_ids = [cdf.loc[2, "paper_id"], cdf.loc[3, "paper_id"]]
-        noise = " ### CORRUPTED_NOISE_GIBBERISH_12345 ### "
-        cdf.loc[2, "summary"] = str(cdf.loc[2, "summary"]) + noise
-        cdf.loc[3, "summary"] = str(cdf.loc[3, "summary"]) + noise
-        corruption_logs.append({
+    # ---- 3. Inject noise (moi dong thu 5, dem tu vi tri 2, khong trung dong blank)
+    noise_positions = [p for p in range(2, len(corrupted), 5) if p not in blank_positions]
+    noise_ids = corrupted.loc[noise_positions, "paper_id"].tolist()
+    corrupted.loc[noise_positions, "summary"] = (
+        corrupted.loc[noise_positions, "summary"].astype(str) + _NOISE_TOKENS
+    )
+    scenarios.append(
+        {
             "scenario": "inject_noise",
-            "description": "Injected garbage noise into summary",
-            "affected_count": len(target_ids),
-            "paper_ids": target_ids,
-        })
+            "description": f"Injected meaningless noise tokens into {len(noise_positions)} summaries.",
+            "rows_affected": len(noise_positions),
+            "affected_paper_ids": noise_ids,
+        }
+    )
 
-    # 4. Truncate title (shorten title < 8 chars on rows 4 & 5)
-    if len(cdf) >= 6 and "title" in cdf.columns:
-        target_ids = [cdf.loc[4, "paper_id"], cdf.loc[5, "paper_id"]]
-        cdf.loc[4, "title"] = "Short"
-        cdf.loc[5, "title"] = "Bad"
-        corruption_logs.append({
+    # ---- 4. Truncate title (< 8 ky tu) cho 3 dong cuoi
+    truncate_positions = list(range(max(0, len(corrupted) - 3), len(corrupted)))
+    truncate_ids = corrupted.loc[truncate_positions, "paper_id"].tolist()
+    corrupted.loc[truncate_positions, "title"] = (
+        corrupted.loc[truncate_positions, "title"].astype(str).str.slice(0, 6)
+    )
+    scenarios.append(
+        {
             "scenario": "truncate_title",
-            "description": "Truncated title to < 8 chars",
-            "affected_count": len(target_ids),
-            "paper_ids": target_ids,
-        })
+            "description": f"Truncated titles to < 8 chars on {len(truncate_positions)} rows.",
+            "rows_affected": len(truncate_positions),
+            "affected_paper_ids": truncate_ids,
+        }
+    )
 
-    # 5. Stale date (shift published date back 365 days on rows 6, 7, 8)
-    if len(cdf) >= 9 and "published" in cdf.columns:
-        target_ids = []
-        for idx in range(6, 9):
-            paper_id = cdf.loc[idx, "paper_id"]
-            target_ids.append(paper_id)
-            pub_str = str(cdf.loc[idx, "published"])
-            try:
-                dt = pd.to_datetime(pub_str) - pd.Timedelta(days=365)
-                cdf.loc[idx, "published"] = dt.strftime("%Y-%m-%d")
-                if "age_days" in cdf.columns:
-                    cdf.loc[idx, "age_days"] = int(cdf.loc[idx, "age_days"]) + 365
-            except Exception:
-                pass
-        corruption_logs.append({
+    # ---- 5. Stale date (lui published ve 365 ngay truoc) cho moi dong thu 6
+    stale_positions = list(range(3, len(corrupted), 6))
+    stale_ids = corrupted.loc[stale_positions, "paper_id"].tolist()
+    if stale_positions:
+        parsed = pd.to_datetime(corrupted.loc[stale_positions, "published"], format="%Y-%m-%d")
+        corrupted.loc[stale_positions, "published"] = (
+            parsed - pd.Timedelta(days=365)
+        ).dt.strftime("%Y-%m-%d")
+        corrupted.loc[stale_positions, "age_days"] = (
+            pd.to_numeric(corrupted.loc[stale_positions, "age_days"]) + 365
+        ).astype("int64")
+    scenarios.append(
+        {
             "scenario": "stale_date",
-            "description": "Shifted published date back by 365 days",
-            "affected_count": len(target_ids),
-            "paper_ids": target_ids,
-        })
+            "description": f"Shifted `published` back 365 days on {len(stale_positions)} rows.",
+            "rows_affected": len(stale_positions),
+            "affected_paper_ids": stale_ids,
+        }
+    )
 
-    # 6. Duplicate rows (duplicate first 2 rows)
-    if len(cdf) >= 2:
-        dup_rows = cdf.iloc[:2].copy()
-        duplicated_ids = dup_rows["paper_id"].tolist()
-        cdf = pd.concat([cdf, dup_rows], ignore_index=True)
-        corruption_logs.append({
+    # ---- 6. Duplicate rows (nhan doi 2 dong dau)
+    duplicate_positions = list(range(min(2, len(corrupted))))
+    duplicated_ids = corrupted.loc[duplicate_positions, "paper_id"].tolist()
+    if duplicate_positions:
+        corrupted = pd.concat([corrupted, corrupted.iloc[duplicate_positions]], ignore_index=True)
+    scenarios.append(
+        {
             "scenario": "duplicate_rows",
-            "description": "Duplicated rows to create duplicate paper_ids",
-            "affected_count": len(dup_rows),
-            "paper_ids": duplicated_ids,
-        })
+            "description": f"Duplicated {len(duplicate_positions)} rows (first rows of the corpus).",
+            "rows_affected": len(duplicate_positions),
+            "affected_paper_ids": duplicated_ids,
+        }
+    )
 
-    # Rebuild helper fields & text_for_embedding
-    cdf["summary_chars"] = cdf["summary"].apply(lambda s: len(str(s)) if pd.notna(s) else 0)
+    # ---- Rebuild cac cot phu sinh (text_for_embedding, summary_chars)
+    corrupted = _recompute_derived_columns(corrupted)
 
-    def build_text_for_embedding(row: pd.Series) -> str:
-        t = str(row.get("title", "")).strip()
-        a = str(row.get("authors_joined", "")).strip()
-        p = str(row.get("published", "")).strip()
-        c = str(row.get("categories_joined", "")).strip()
-        s = str(row.get("summary", "")).strip()
-        return f"Title: {t}\nAuthors: {a}\nPublished: {p}\nCategories: {c}\nSummary: {s}"
-
-    cdf["text_for_embedding"] = cdf.apply(build_text_for_embedding, axis=1)
-
-    # Save corruption log
-    out_path = Path(output_log_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "total_corruptions": len(corruption_logs),
-            "corrupted_rows_final": len(cdf),
-            "scenarios": corruption_logs,
-        }, f, ensure_ascii=False, indent=2)
-
-    logger.info("Corrupted dataframe created with %d rows. Log saved to %s", len(cdf), out_path)
-    return cdf
-
-
-def repair_clean_dataframe(raw_records_path: Path | str, run_date: datetime | None = None) -> pd.DataFrame:
-    """Idempotently repair dataset by re-reading raw records and running cleaning pipeline.
-
-    Guarantees clean 100% state without manual editing (Idempotent Repair).
-    """
-    raw_path = Path(raw_records_path)
-    if run_date is None:
-        run_date = datetime.now(timezone.utc)
-
-    records = load_raw_records(raw_path)
-    repaired_df = build_clean_dataframe(records, run_date)
-    return repaired_df
-
+    log_payload = {
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "total_rows_before": rows_before,
+        "total_rows_after": len(corrupted),
+        "scenario_count": len(scenarios),
+        "scenarios": scenarios,
+    }
+    log_path = output_log_path
+    ensure_parent(log_path)
+    write_json(log_path, log_payload)
+    return corrupted

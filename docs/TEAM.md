@@ -1,8 +1,9 @@
 # Danh Sách Thành Viên & Báo Cáo Phân Công Nhóm
 
-- **Tên Nhóm:** `[Điền tên nhóm]`
+- **Tên Nhóm:** `K4-L3-DAY10-DataPipeline`
 - **Mã Nhóm / Lớp:** `K4-L3-DAY10`
-- **Tên Repository Nộp Bài:** `K4-L3-DAY10-TenNhom-DataPipeline`
+- **Tên Repository Nộp Bài:** `K4-L3-DAY10-DataPipeline`
+- **GitHub URL:** `https://github.com/ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability`
 
 ---
 
@@ -10,27 +11,27 @@
 
 | STT | Họ và tên | MSSV | Email | Vai trò & Phân công công việc | Báo cáo cá nhân |
 |---:|---|---|---|---|---|
-| 1 | | | | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`) | `report/<MSSV1>_HoTen.md` |
-| 2 | | | | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | `report/<MSSV2>_HoTen.md` |
-| 3 | Phùng Gia Khánh | 2A202602585 | phunggiakhanh030405@gmail.com | RAG & Vector Index (`retrieval/index.py`, `embeddings.py`, ChromaDB) | `report/2A202602585_PhungGiaKhanh.md` |
-| 4 | | | | Observability & Evaluation (`quality.py` GX 1.x, `testset.py`, reporting) | `report/<MSSV4>_HoTen.md` |
-
-*(Nếu nhóm có 3 hoặc 5-6 thành viên, xem bảng phân công chi tiết theo vai trò trong file `CHECKPOINTS.md`)*.
+| 1 | Tạ Việt Cường | 2A202602560 | cuongtv@vinuni.edu.vn | Trưởng nhóm / Pipeline Integrator (`core/`, `phase1.py`, `corruption_flow.py`, `tests/`) | [`report/2A202602560_TaVietCuong.md`](../report/2A202602560_TaVietCuong.md) |
+| 2 | Vũ Minh Hoàng | 2A202602570 | minhhoangvu111@gmail.com | Data Foundation & Recovery (`crossref.py`, `cleaning.py`, raw data) | `report/<MSSV2>_HoTen.md` |
+| 3 | Phùng Gia Khánh | 2A202602585 | phunggiakhanh030405@gmail.com | RAG & Vector Index (`retrieval/index.py`, `embeddings.py`, ChromaDB) | [`report/2A202602585_PhungGiaKhanh.md`](../report/2A202602585_PhungGiaKhanh.md) |
+| 4 | Trần Thị Thu Trang | 2A202602581 | trangttt@vinuni.edu.vn | Observability & Evaluation (`quality.py` GX 1.x, `testset.py`, reporting) | [`report/2A202602581_TranThiThuTrang.md`](../report/2A202602581_TranThiThuTrang.md) |
 
 ---
 
 ## # Cá nhân
 
-### ## HoVaTen1-MSSV1
-- **Vai trò:** Trưởng nhóm & Điều phối Pipeline.
+### ## TaVietCuong-2A202602560
+- **Vai trò:** Trưởng nhóm & Điều phối Pipeline (Pipeline Lead & System Integrator).
 - **Công việc chi tiết đã hoàn thành:**
   - Thiết lập cấu hình hệ thống `core/config.py` và đường dẫn artifacts `core/utils.py`.
   - Kết nối luồng thực thi trong `src/pipelines/phase1.py` và `src/pipelines/corruption_flow.py`.
-  - Kiểm tra tính nhất quán của các artifacts và theo dõi Contributor tracking trên GitHub nhánh `main`.
+  - Viết bộ tự động hóa kiểm thử `tests/` với 8 bài unit test pytest đạt tỷ lệ pass 100% (Bonus B3: +5đ).
+  - Xây dựng ứng dụng Web Demo Studio tương tác bằng Streamlit tại `src/app.py` và bộ launcher `start_app.bat` (Bonus B1: +5đ).
+  - Soạn thảo báo cáo nhóm `report/group_report.md` và tài liệu hướng dẫn bảo vệ `docs/DEMO_GUIDE.md`.
 - **Điều học được / Đóng góp chính:**
-  - Hiểu sâu sắc về thiết kế Idempotent Pipeline và quản lý trạng thái luồng dữ liệu đa tầng.
+  - Hiểu sâu sắc về thiết kế Idempotent Pipeline, cơ chế kiểm soát chất lượng Great Expectations 1.x và ngăn chặn hiện tượng Silent Failure trong các hệ thống RAG thực tế.
 
-### ## HoVaTen2-MSSV2
+### ## VuMinhHoang-2A202602570
 - **Vai trò:** Phụ trách Ingestion, Làm sạch & Phục hồi dữ liệu.
 - **Công việc chi tiết đã hoàn thành:**
   - Xây dựng module thu thập Crossref API với cơ chế Fallback offline trong `src/ingestion/crossref.py`.
@@ -48,7 +49,7 @@
 - **Điều học được / Đóng góp chính:**
   - Cách cô lập các không gian vector để so sánh khách quan giữa dữ liệu sạch và dữ liệu bị lỗi.
 
-### ## HoVaTen4-MSSV4
+### ## TranThiThuTrang-2A202602581
 - **Vai trò:** Phụ trách Data Observability & Benchmark Evaluation.
 - **Công việc chi tiết đã hoàn thành:**
   - Thiết lập Quality Gate theo chuẩn mới **Great Expectations 1.x** và giám sát Freshness SLA trong `src/observability/quality.py`.

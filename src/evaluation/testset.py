@@ -1,53 +1,72 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
-
 import pandas as pd
 
-from core.utils import write_json
-
-QUESTION_TYPES = ("summary", "authors", "date", "categories")
-MIN_DOCUMENTS = 5
-TEST_SET_SIZE = 10
+from core.utils import first_sentence, write_json
 
 
-def _build_question(question_type: str, row: pd.Series) -> tuple[str, str]:
-    title = row["title"]
-    if question_type == "summary":
-        return f"Bai bao '{title}' viet ve noi dung gi?", row["summary"]
-    if question_type == "authors":
-        return f"Ai la tac gia cua bai bao '{title}'?", row["authors_joined"]
-    if question_type == "date":
-        return f"Bai bao '{title}' duoc xuat ban khi nao?", str(row["published"])
-    if question_type == "categories":
-        return f"Bai bao '{title}' thuoc linh vuc / chuyen nganh nao?", row["categories_joined"]
-    raise ValueError(f"Unknown question_type: {question_type}")
+def build_test_set(df: pd.DataFrame, output_path: Path | str) -> list[dict[str, Any]]:
+    """Tao bo evaluation set gom 10 cau hoi thuoc 4 loai tu cleaned dataframe."""
+    if len(df) < 5:
+        raise ValueError(f"Cleaned DataFrame has only {len(df)} rows, need at least 5 to build evaluation set.")
 
-
-def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
-    """Sinh bo 10 cau hoi benchmark, rai deu tren 4 loai: summary, authors, date, categories.
-
-    Moi item: id, question_type, question, ground_truth, ground_truth_doc_ids.
-    """
-    if len(df) < MIN_DOCUMENTS:
-        raise ValueError(f"Can toi thieu {MIN_DOCUMENTS} document de sinh test set, chi co {len(df)}.")
-
-    sample_size = min(TEST_SET_SIZE, len(df))
-    sample = df.sort_values("paper_id").reset_index(drop=True).head(sample_size)
-
+    papers = df.to_dict(orient="records")
+    n_papers = len(papers)
     test_set: list[dict[str, Any]] = []
-    for i, row in sample.iterrows():
-        question_type = QUESTION_TYPES[i % len(QUESTION_TYPES)]
-        question, ground_truth = _build_question(question_type, row)
+
+    # 1. Summary questions (3 questions)
+    for i in range(3):
+        p = papers[i % n_papers]
         test_set.append(
             {
-                "id": f"q{i + 1}",
-                "question_type": question_type,
-                "question": question,
-                "ground_truth": ground_truth,
-                "ground_truth_doc_ids": [row["paper_id"]],
+                "id": f"q_{len(test_set) + 1}",
+                "question_type": "summary",
+                "question": f"What is the summary of the paper '{p['title']}'?",
+                "ground_truth": first_sentence(p["summary"]),
+                "ground_truth_doc_ids": [p["paper_id"]],
             }
         )
 
-    write_json(output_path, test_set)
+    # 2. Authors questions (3 questions)
+    for i in range(3):
+        p = papers[(i + 3) % n_papers]
+        test_set.append(
+            {
+                "id": f"q_{len(test_set) + 1}",
+                "question_type": "authors",
+                "question": f"Who authored the paper '{p['title']}'?",
+                "ground_truth": p["authors_joined"],
+                "ground_truth_doc_ids": [p["paper_id"]],
+            }
+        )
+
+    # 3. Date questions (2 questions)
+    for i in range(2):
+        p = papers[(i + 6) % n_papers]
+        test_set.append(
+            {
+                "id": f"q_{len(test_set) + 1}",
+                "question_type": "date",
+                "question": f"When was the study '{p['title']}' published?",
+                "ground_truth": p["published"],
+                "ground_truth_doc_ids": [p["paper_id"]],
+            }
+        )
+
+    # 4. Categories questions (2 questions)
+    for i in range(2):
+        p = papers[(i + 8) % n_papers]
+        test_set.append(
+            {
+                "id": f"q_{len(test_set) + 1}",
+                "question_type": "categories",
+                "question": f"What categories describe the paper '{p['title']}'?",
+                "ground_truth": p["categories_joined"],
+                "ground_truth_doc_ids": [p["paper_id"]],
+            }
+        )
+
+    write_json(Path(output_path), test_set)
     return test_set

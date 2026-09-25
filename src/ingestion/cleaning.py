@@ -1,84 +1,81 @@
 from __future__ import annotations
 
-from dataclasses import asdict
-from datetime import datetime
-from typing import Any
-
+from datetime import UTC, datetime, timezone
 import pandas as pd
 
+from core.utils import compact_join, normalize_whitespace
 from ingestion.crossref import PaperRecord
 
 
+def _parse_published_date(pub_str: str) -> datetime:
+    try:
+        clean_date = pub_str.strip()[:10]
+        dt = datetime.strptime(clean_date, "%Y-%m-%d")
+        return dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return datetime.now(timezone.utc)
+
+
 def build_clean_dataframe(records: list[PaperRecord], run_date: datetime) -> pd.DataFrame:
-    """Clean raw records into a structured DataFrame ready for embedding & observability checks.
+    """Clean raw records thanh dataframe san sang de embed."""
+    if run_date.tzinfo is None:
+        run_date = run_date.replace(tzinfo=timezone.utc)
 
-    Steps:
-    1. Convert records to dictionary list & create initial DataFrame.
-    2. Deduplicate records by paper_id.
-    3. Filter out invalid rows (missing paper_id or title).
-    4. Construct helper columns:
-       - authors_joined
-       - categories_joined
-       - summary_chars
-    5. Calculate age_days = (run_date - published).days.
-    6. Construct text_for_embedding format (5 lines: Title, Authors, Published, Categories, Summary).
-    7. Reset index and return clean DataFrame.
-    """
-    if not records:
-        return pd.DataFrame()
+    rows: list[dict] = []
+    seen_ids: set[str] = set()
 
-    raw_dicts = [asdict(r) if isinstance(r, PaperRecord) else dict(r) for r in records]
-    df = pd.DataFrame(raw_dicts)
+    for record in records:
+        paper_id = normalize_whitespace(record.paper_id)
+        if not paper_id or paper_id in seen_ids:
+            continue
+        seen_ids.add(paper_id)
 
-    # 1. Khử trùng lặp bản ghi theo khóa duy nhất paper_id
-    if "paper_id" in df.columns:
-        df = df.drop_duplicates(subset=["paper_id"], keep="first")
-        df = df[df["paper_id"].notna() & (df["paper_id"].astype(str).str.strip() != "")]
+        title = normalize_whitespace(record.title)
+        summary = normalize_whitespace(record.summary)
+        if not title or len(title) < 5:
+            continue
 
-    if "title" in df.columns:
-        df = df[df["title"].notna() & (df["title"].astype(str).str.strip() != "")]
+        authors = [normalize_whitespace(a) for a in record.authors if a]
+        authors_joined = compact_join(authors, sep=", ")
 
-    if df.empty:
-        return df
+        categories = [normalize_whitespace(c) for c in record.categories if c]
+        categories_joined = compact_join(categories, sep=", ")
+        primary_category = record.primary_category or (categories[0] if categories else "General")
 
-    # Cot helper authors_joined va categories_joined
-    def join_list(val: Any) -> str:
-        if isinstance(val, list):
-            return ", ".join([str(x).strip() for x in val if str(x).strip()])
-        if isinstance(val, str):
-            return val.strip()
-        return ""
+        pub_dt = _parse_published_date(record.published)
+        age_days = max(0, (run_date - pub_dt).days)
+        published_str = pub_dt.strftime("%Y-%m-%d")
 
-    df["authors_joined"] = df["authors"].apply(join_list)
-    df["categories_joined"] = df["categories"].apply(join_list)
-    df["summary_chars"] = df["summary"].apply(lambda s: len(str(s)) if pd.notna(s) else 0)
+        text_for_embedding = (
+            f"Title: {title}\n"
+            f"Authors: {authors_joined}\n"
+            f"Published: {published_str}\n"
+            f"Categories: {categories_joined}\n"
+            f"Summary: {summary}"
+        ).strip()
 
-    # 2. Tính toán độ tươi của dữ liệu: age_days = (run_date - published).days
-    run_date_val = run_date.date() if isinstance(run_date, datetime) else run_date
+        rows.append(
+            {
+                "paper_id": paper_id,
+                "title": title,
+                "summary": summary,
+                "authors": authors,
+                "authors_joined": authors_joined,
+                "categories": categories,
+                "categories_joined": categories_joined,
+                "primary_category": primary_category,
+                "published": published_str,
+                "updated": record.updated,
+                "abs_url": record.abs_url,
+                "pdf_url": record.pdf_url,
+                "comment": record.comment,
+                "age_days": age_days,
+                "summary_chars": len(summary),
+                "text_for_embedding": text_for_embedding,
+            }
+        )
 
-    def calc_age_days(pub_val: Any) -> int:
-        if not pub_val or pd.isna(pub_val):
-            return 0
-        try:
-            pub_dt = pd.to_datetime(pub_val)
-            pub_date = pub_dt.date()
-            return (run_date_val - pub_date).days
-        except Exception:
-            return 0
-
-    df["age_days"] = df["published"].apply(calc_age_days).astype(int)
-
-    # 3. Xây dựng trường nội dung tổng hợp cho Vector Database text_for_embedding
-    def build_text_for_embedding(row: pd.Series) -> str:
-        t = str(row.get("title", "")).strip()
-        a = str(row.get("authors_joined", "")).strip()
-        p = str(row.get("published", "")).strip()
-        c = str(row.get("categories_joined", "")).strip()
-        s = str(row.get("summary", "")).strip()
-        return f"Title: {t}\nAuthors: {a}\nPublished: {p}\nCategories: {c}\nSummary: {s}"
-
-    df["text_for_embedding"] = df.apply(build_text_for_embedding, axis=1)
-
-    df = df.reset_index(drop=True)
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df = df.sort_values(by="published", ascending=False).reset_index(drop=True)
     return df
-

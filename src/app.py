@@ -1,9 +1,13 @@
-from __future__ import annotations
-
-import json
+import os
 from pathlib import Path
+import sys
+
 import pandas as pd
 import streamlit as st
+
+# Setup python path to load modules correctly
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from core.config import load_settings
 from core.utils import read_json
@@ -12,85 +16,77 @@ from retrieval.qa import answer_question
 
 
 st.set_page_config(
-    page_title="RAG Data Observability Studio",
-    page_icon="🔬",
+    page_title="FinTech Data Observability & RAG Studio",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-st.markdown(
-    """
-    <style>
-    .main-header { font-size: 2.2rem; font-weight: 700; color: #1E3A8A; margin-bottom: 0.2rem; }
-    .sub-header { font-size: 1.1rem; color: #4B5563; margin-bottom: 1.5rem; }
-    .metric-card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin-bottom: 10px; }
-    .stAlert { border-radius: 8px; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 @st.cache_resource
-def get_cached_settings():
-    return load_settings()
-
-
-@st.cache_resource
-def load_all_indices():
-    settings = get_cached_settings()
+def load_app_resources():
+    settings = load_settings(ROOT_DIR)
     indices = {}
+
+    # Load baseline
     if settings.paths.embeddings_json.exists():
         try:
-            indices["baseline"] = LocalEmbeddingIndex.load(settings, settings.paths.embeddings_json)
+            indices["baseline"] = LocalEmbeddingIndex.load(
+                settings=settings,
+                manifest_path=settings.paths.embeddings_json,
+            )
         except Exception as e:
-            st.error(f"Lỗi load Baseline index: {e}")
+            st.sidebar.error(f"Lỗi nạp Baseline Index: {e}")
 
+    # Load corrupted
     if settings.paths.corrupted_embeddings_json.exists():
         try:
-            indices["corrupted"] = LocalEmbeddingIndex.load(settings, settings.paths.corrupted_embeddings_json)
-        except Exception as e:
+            indices["corrupted"] = LocalEmbeddingIndex.load(
+                settings=settings,
+                manifest_path=settings.paths.corrupted_embeddings_json,
+            )
+        except Exception:
             indices["corrupted"] = None
 
+    # Load repaired
     if settings.paths.repaired_embeddings_json.exists():
         try:
-            indices["repaired"] = LocalEmbeddingIndex.load(settings, settings.paths.repaired_embeddings_json)
-        except Exception as e:
+            indices["repaired"] = LocalEmbeddingIndex.load(
+                settings=settings,
+                manifest_path=settings.paths.repaired_embeddings_json,
+            )
+        except Exception:
             indices["repaired"] = None
 
-    return indices
+    return settings, indices
 
 
 def main():
-    settings = get_cached_settings()
-    indices = load_all_indices()
+    settings, indices = load_app_resources()
 
-    st.markdown('<div class="main-header">🔬 RAG Data Pipeline & Observability Studio</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Hệ thống Giám sát Chất lượng Dữ liệu, Phân tích Silent Failure & Idempotent Repair (VinUni K4 - Day 10)</div>', unsafe_allow_html=True)
+    st.title("🛡️ FinTech: Data Observability & RAG Live Studio")
+    st.caption("VinUni AI-Engineer K4 — Lab 10: Data Pipeline, Great Expectations 1.x & Silent Failure Demonstration")
 
-    # Sidebar Navigation
-    st.sidebar.title("📌 Danh Mục Điều Khiển")
+    # SIDEBAR: System Status
+    st.sidebar.title("📌 Trạng Thái Hệ Thống")
+    st.sidebar.markdown(f"**Repository:** `ratrichero/K4A-DAY10-FinTech`")
+    st.sidebar.markdown(f"**Nhánh Lead:** `cuongtv` / `main`")
+
+    st.sidebar.subheader("Index Collections")
+    st.sidebar.markdown(
+        f"- **Baseline:** {'✅ Sẵn sàng' if indices.get('baseline') else '❌ Chưa nạp'}\n"
+        f"- **Corrupted:** {'✅ Sẵn sàng' if indices.get('corrupted') else '❌ Chưa nạp'}\n"
+        f"- **Repaired:** {'✅ Sẵn sàng' if indices.get('repaired') else '❌ Chưa nạp'}"
+    )
+
     tab_selection = st.sidebar.radio(
         "Chọn màn hình làm việc:",
         [
-            "1. 📊 Bảng Đối Chiếu 3 Trạng Thái (Benchmark)",
-            "2. 🛡️ Data Quality Gate & Freshness SLA",
-            "3. 💬 Live RAG Demo (Thực Nghiệm Silent Failure)",
-            "4. 📂 Khám Phá Dataset & Data Lineage",
+            "1. 📊 Đối Chiếu 3 Trạng Thái (Benchmark)",
+            "2. 🛡️ Cổng Kiểm Soát Chất Lượng (Quality Gate)",
+            "3. 💬 Thử Nghiệm Truy Vấn RAG Trực Tiếp",
+            "4. 📂 Khám Phá Dataset & Lineage",
         ],
-    )
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("⚙️ Trạng Thái Hệ Thống")
-    st.sidebar.info(
-        f"""
-        - **Embedding Model:** `all-MiniLM-L6-v2`
-        - **Vector DB:** ChromaDB Local
-        - **LLM Provider:** `{settings.llm_provider}`
-        - **Baseline Collection:** `{settings.baseline_collection_name}`
-        - **Corrupted Collection:** `{settings.corrupted_collection_name}`
-        - **Repaired Collection:** `{settings.repaired_collection_name}`
-        """
     )
 
     # ----------------------------------------------------
@@ -175,7 +171,12 @@ def main():
                 b_q = read_json(settings.paths.baseline_quality_report)
                 st.success(f"Trạng thái: PASS ({b_q.get('passed_checks', 6)}/{b_q.get('total_checks', 6)} kiểm tra thành công)")
                 checks_df = pd.DataFrame(b_q.get("checks", []))
-                st.dataframe(checks_df[["expectation_type", "column", "success"]], use_container_width=True)
+                exp_col = "expectation" if "expectation" in checks_df.columns else "expectation_type"
+                cols_to_show = [c for c in [exp_col, "column", "success"] if c in checks_df.columns]
+                display_b_df = checks_df[cols_to_show].rename(
+                    columns={exp_col: "Expectation Check", "column": "Cột", "success": "Kết quả"}
+                )
+                st.dataframe(display_b_df, use_container_width=True)
             else:
                 st.warning("Chưa tìm thấy baseline_quality_report.json")
 
@@ -186,7 +187,12 @@ def main():
                 c_q = read_json(corrupted_q_path)
                 st.error(f"Trạng thái: FAIL (Chỉ đạt {c_q.get('passed_checks', 4)}/{c_q.get('total_checks', 6)} kiểm tra)")
                 c_checks_df = pd.DataFrame(c_q.get("checks", []))
-                st.dataframe(c_checks_df[["expectation_type", "column", "success"]], use_container_width=True)
+                exp_col = "expectation" if "expectation" in c_checks_df.columns else "expectation_type"
+                cols_to_show = [c for c in [exp_col, "column", "success"] if c in c_checks_df.columns]
+                display_c_df = c_checks_df[cols_to_show].rename(
+                    columns={exp_col: "Expectation Check", "column": "Cột", "success": "Kết quả"}
+                )
+                st.dataframe(display_c_df, use_container_width=True)
             else:
                 st.info("Chưa có báo cáo corrupted_quality_report.json")
 
@@ -276,10 +282,12 @@ def main():
         if target_file.exists():
             df_display = pd.read_csv(target_file)
             st.markdown(f"**Tổng số dòng:** {len(df_display)} | **Tập tin:** `{target_file.name}`")
-            st.dataframe(df_display[["paper_id", "title", "published", "age_days", "categories_joined", "summary"]], use_container_width=True)
+            display_cols = [c for c in ["paper_id", "title", "published", "age_days", "categories_joined", "summary"] if c in df_display.columns]
+            st.dataframe(df_display[display_cols], use_container_width=True)
 
             with st.expander("🔍 Xem thử một bản ghi text_for_embedding chuẩn"):
-                st.code(df_display.iloc[0]["text_for_embedding"], language="markdown")
+                if "text_for_embedding" in df_display.columns:
+                    st.code(df_display.iloc[0]["text_for_embedding"], language="markdown")
         else:
             st.warning(f"Chưa tìm thấy file {target_file}")
 

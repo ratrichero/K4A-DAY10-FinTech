@@ -22,7 +22,7 @@
 
 ## 2. Tóm tắt kết quả
 
-Nhóm đã hoàn thành trọn vẹn 100% khối lượng công việc của 7 Checkpoints (CP0 đến CP6) cùng 2 hạng mục điểm thưởng Bonus (+10 điểm: B1 Web Dashboard Streamlit và B3 Pytest CI Suite 8/8 tests pass).
+Nhóm đã hoàn thành trọn vẹn 100% khối lượng công việc của 7 Checkpoints (CP0 đến CP6) cùng 2 hạng mục điểm thưởng Bonus (+10 điểm: B1 Web Dashboard Streamlit và B3 Pytest CI Suite 16/16 tests pass).
 
 Toàn bộ hệ thống luồng dữ liệu end-to-end đã được thiết kế và kiểm chứng thực nghiệm chặt chẽ:
 1. **Baseline Pipeline:** Thu thập 24 bản ghi khoa học từ Crossref API (hỗ trợ offline snapshot fallback), làm sạch chuẩn hóa với trường `text_for_embedding` 5 dòng, kiểm soát chất lượng qua Great Expectations 1.x (đạt 6/6 checks) và Freshness SLA (100% tươi mới). Đánh chỉ mục ChromaDB (`papers-baseline`) và đánh giá trên bộ test 10 câu hỏi đạt điểm tuyệt đối: **Retrieval Hit Rate = 1.0000**, **Mean Token F1 = 1.0000**, **Judge Accuracy = 1.0000**.
@@ -113,7 +113,7 @@ Crossref REST API (Offline Snapshot Fallback)
 | ----------------- | ----------------------------------------------- | ----------------------------- | ------------------------------------ |
 | Baseline pipeline | Thành công (Exit code 0) | 2026-09-25 16:21:26 | `data/reports/phase1_report.md`, `baseline_metrics.json` |
 | Corruption flow   | Thành công (Exit code 0) | 2026-09-25 16:56:56 | `data/reports/corruption_report.md`, `corruption_log.json` (generated_at) |
-| Pytest Test Suite | Thành công (8/8 passed) | 2026-09-25 16:46:44 | `tests/`, task-357 execution log (213.97s) |
+| Pytest Test Suite | Thành công (16/16 passed) | 2026-09-25 | `tests/`, log nghiệm thu Phase 5 trong `excute.md` (16/16 PASSED, 113.63s) |
 | Streamlit Web App | Đang hoạt động | 2026-09-25 17:16:51 | `http://localhost:8501`, `start_app.bat` |
 
 ---

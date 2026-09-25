@@ -7,9 +7,9 @@
 | Họ và tên       | Tạ Việt Cường                                   |
 | MSSV               | 2A202602560                                     |
 | Khóa/Lớp         | K4                                              |
-| Tên nhóm         | K4-L3-DAY10 (Day 10 — Data Pipeline & Data Observability) |
+| Tên nhóm         | FinTech (K4-L3) |
 | Vai trò chính    | Pipeline Lead & System Integrator (Thành viên 1) |
-| Repository         | [ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability](https://github.com/ratrichero/K4-L3A-Day10-Data-Pipeline-Data-Observability) (nhánh làm việc: `cuongtv`) |
+| Repository         | [ratrichero/K4A-DAY10-FinTech](https://github.com/ratrichero/K4A-DAY10-FinTech) (nhánh làm việc: `cuongtv`) |
 | Ngày hoàn thành | 2026-09-25                                     |
 
 ## 2. Vai trò và phạm vi công việc
@@ -43,7 +43,7 @@ Chú thích phạm vi: tôi là owner chính của khối **orchestration/integr
 | Pipeline corruption→repair 9 bước | `src/pipelines/corruption_flow.py` | End-to-end Exit Code 0, sinh đủ 14+ artifacts, 3 collection ChromaDB tách biệt | `python script/run_corruption_flow.py` |
 | 6 kịch bản corruption deterministic | `src/ingestion/corruption.py` | `data/results/corruption_log.json` ghi đủ 6 kịch bản + paper_id bị ảnh hưởng, corpus 24→21 dòng | Đọc `corruption_log.json`; chạy lại 2 lần log khớp nhau |
 | Fallback report khi reporting chưa xong | `_write_fallback_comparison_report` | Bảng 3 cột luôn được sinh kể cả khi `generate_corruption_report` chưa implement | Tạm mock lỗi → report fallback vẫn xuất hiện |
-| Chạy nghiệm thu 2 pipeline + pytest | `script/*.py`, `tests/` | Exit Code 0 cho cả 2 pipeline; pytest 8/8 passed | Xem log trong `mydoc/excute.md` |
+| Chạy nghiệm thu 2 pipeline + pytest | `script/*.py`, `tests/` | Exit Code 0 cho cả 2 pipeline; pytest 16/16 passed | Xem log trong `mydoc/excute.md` |
 
 Output cụ thể nhất phần tôi tạo ra: **`data/reports/corruption_report.md`** — bảng đối chiếu 3 trạng thái với số liệu thật, cùng cơ chế đảm bảo nó luôn đúng (đọc key metrics từ `evaluate_pipeline`, fallback khi reporting stub).
 

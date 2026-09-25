@@ -25,7 +25,7 @@
 - **Công việc chi tiết đã hoàn thành:**
   - Thiết lập cấu hình hệ thống `core/config.py` và đường dẫn artifacts `core/utils.py`.
   - Kết nối luồng thực thi trong `src/pipelines/phase1.py` và `src/pipelines/corruption_flow.py`.
-  - Viết bộ tự động hóa kiểm thử `tests/` với 8 bài unit test pytest đạt tỷ lệ pass 100% (Bonus B3: +5đ).
+  - Viết bộ tự động hóa kiểm thử `tests/` với 16 bài unit test pytest đạt tỷ lệ pass 100% (Bonus B3: +5đ).
   - Xây dựng ứng dụng Web Demo Studio tương tác bằng Streamlit tại `src/app.py` và bộ launcher `start_app.bat` (Bonus B1: +5đ).
   - Soạn thảo báo cáo nhóm `report/group_report.md` và tài liệu hướng dẫn bảo vệ `docs/DEMO_GUIDE.md`.
 - **Điều học được / Đóng góp chính:**

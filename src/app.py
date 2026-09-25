@@ -33,7 +33,7 @@ def load_app_resources():
         try:
             indices["baseline"] = LocalEmbeddingIndex.load(
                 settings=settings,
-                manifest_path=settings.paths.embeddings_json,
+                embeddings_path=settings.paths.embeddings_json,
             )
         except Exception as e:
             st.sidebar.error(f"Lỗi nạp Baseline Index: {e}")
@@ -43,7 +43,7 @@ def load_app_resources():
         try:
             indices["corrupted"] = LocalEmbeddingIndex.load(
                 settings=settings,
-                manifest_path=settings.paths.corrupted_embeddings_json,
+                embeddings_path=settings.paths.corrupted_embeddings_json,
             )
         except Exception:
             indices["corrupted"] = None
@@ -53,7 +53,7 @@ def load_app_resources():
         try:
             indices["repaired"] = LocalEmbeddingIndex.load(
                 settings=settings,
-                manifest_path=settings.paths.repaired_embeddings_json,
+                embeddings_path=settings.paths.repaired_embeddings_json,
             )
         except Exception:
             indices["repaired"] = None
@@ -145,7 +145,7 @@ def main():
             "Mức độ ảnh hưởng": ["Sụt giảm 50%", "Sụt giảm 47.1%", "Sụt giảm 50%", "Giảm 2 điểm", "Bắt trúng 2 vi phạm"],
         }
         df_metrics = pd.DataFrame(metrics_data)
-        st.dataframe(df_metrics, use_container_width=True)
+        st.dataframe(df_metrics, width="stretch")
 
         chart_data = pd.DataFrame(
             {
@@ -176,7 +176,7 @@ def main():
                 display_b_df = checks_df[cols_to_show].rename(
                     columns={exp_col: "Expectation Check", "column": "Cột", "success": "Kết quả"}
                 )
-                st.dataframe(display_b_df, use_container_width=True)
+                st.dataframe(display_b_df, width="stretch")
             else:
                 st.warning("Chưa tìm thấy baseline_quality_report.json")
 
@@ -192,7 +192,7 @@ def main():
                 display_c_df = c_checks_df[cols_to_show].rename(
                     columns={exp_col: "Expectation Check", "column": "Cột", "success": "Kết quả"}
                 )
-                st.dataframe(display_c_df, use_container_width=True)
+                st.dataframe(display_c_df, width="stretch")
             else:
                 st.info("Chưa có báo cáo corrupted_quality_report.json")
 
@@ -275,18 +275,18 @@ def main():
 
         target_file = settings.paths.clean_csv
         if "corrupted" in data_view:
-            target_file = settings.paths.clean_dir / "papers_clean_corrupted.csv"
+            target_file = settings.paths.corrupted_clean_csv
         elif "repaired" in data_view:
-            target_file = settings.paths.clean_dir / "papers_clean_repaired.csv"
+            target_file = settings.paths.repaired_clean_csv
 
         if target_file.exists():
             df_display = pd.read_csv(target_file)
             st.markdown(f"**Tổng số dòng:** {len(df_display)} | **Tập tin:** `{target_file.name}`")
             display_cols = [c for c in ["paper_id", "title", "published", "age_days", "categories_joined", "summary"] if c in df_display.columns]
-            st.dataframe(df_display[display_cols], use_container_width=True)
+            st.dataframe(df_display[display_cols], width="stretch")
 
             with st.expander("🔍 Xem thử một bản ghi text_for_embedding chuẩn"):
-                if "text_for_embedding" in df_display.columns:
+                if "text_for_embedding" in df_display.columns and not df_display.empty:
                     st.code(df_display.iloc[0]["text_for_embedding"], language="markdown")
         else:
             st.warning(f"Chưa tìm thấy file {target_file}")

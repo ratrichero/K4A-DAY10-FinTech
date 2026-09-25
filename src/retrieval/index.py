@@ -12,6 +12,19 @@ from core.utils import read_json, safe_slug, write_json
 from retrieval.embeddings import MiniLMEmbeddings
 
 
+REQUIRED_COLUMNS = {
+    "paper_id",
+    "title",
+    "published",
+    "authors_joined",
+    "categories_joined",
+    "summary",
+    "abs_url",
+    "pdf_url",
+    "text_for_embedding",
+}
+
+
 @dataclass(frozen=True)
 class SearchResult:
     paper_id: str
@@ -42,28 +55,50 @@ class LocalEmbeddingIndex:
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
+        missing_columns = sorted(REQUIRED_COLUMNS.difference(df.columns))
+        if missing_columns:
+            raise ValueError(f"Cannot build retrieval index; missing columns: {', '.join(missing_columns)}.")
+
         records = df.to_dict(orient="records")
         documents: list[dict[str, Any]] = []
         for index, row in enumerate(records):
+            paper_id = LocalEmbeddingIndex._required_text(row["paper_id"], "paper_id", index)
+            title = LocalEmbeddingIndex._required_text(row["title"], "title", index)
+            content = LocalEmbeddingIndex._required_text(row["text_for_embedding"], "text_for_embedding", index)
             documents.append(
                 {
-                    "record_id": f"{row['paper_id']}::{index}",
-                    "paper_id": row["paper_id"],
-                    "title": row["title"],
-                    "content": row["text_for_embedding"],
+                    # The row suffix deliberately keeps duplicate-paper corruption
+                    # scenarios indexable while remaining deterministic per input.
+                    "record_id": f"{paper_id}::{index}",
+                    "paper_id": paper_id,
+                    "title": title,
+                    "content": content,
                     "metadata": {
-                        "paper_id": row["paper_id"],
-                        "title": row["title"],
-                        "published": row["published"],
-                        "authors_joined": row["authors_joined"],
-                        "categories_joined": row["categories_joined"],
-                        "summary": row["summary"],
-                        "abs_url": row["abs_url"],
-                        "pdf_url": row["pdf_url"],
+                        "paper_id": paper_id,
+                        "title": title,
+                        "published": LocalEmbeddingIndex._metadata_text(row["published"]),
+                        "authors_joined": LocalEmbeddingIndex._metadata_text(row["authors_joined"]),
+                        "categories_joined": LocalEmbeddingIndex._metadata_text(row["categories_joined"]),
+                        "summary": LocalEmbeddingIndex._metadata_text(row["summary"]),
+                        "abs_url": LocalEmbeddingIndex._metadata_text(row["abs_url"]),
+                        "pdf_url": LocalEmbeddingIndex._metadata_text(row["pdf_url"]),
                     },
                 }
             )
         return documents
+
+    @staticmethod
+    def _metadata_text(value: Any) -> str:
+        if value is None or (not isinstance(value, (list, dict)) and pd.isna(value)):
+            return ""
+        return str(value).strip()
+
+    @staticmethod
+    def _required_text(value: Any, column: str, row_index: int) -> str:
+        text = LocalEmbeddingIndex._metadata_text(value)
+        if not text:
+            raise ValueError(f"Cannot build retrieval index; row {row_index} has an empty {column}.")
+        return text
 
     @staticmethod
     def _derive_collection_name(settings: Settings, embeddings_output_path: Path | None) -> str:
@@ -95,29 +130,41 @@ class LocalEmbeddingIndex:
         embedding_model = MiniLMEmbeddings(settings.embedding_model)
         client = chromadb.PersistentClient(path=str(persist_path))
         try:
-            client.delete_collection(name=collection_name)
-        except Exception:
-            pass
-        collection = client.create_collection(
-            name=collection_name,
-            configuration={"hnsw": {"space": "cosine"}},
-        )
-        embeddings = embedding_model.embed_documents([document["content"] for document in documents])
-        collection.add(
-            ids=[document["record_id"] for document in documents],
-            embeddings=embeddings,
-            documents=[document["content"] for document in documents],
-            metadatas=[document["metadata"] for document in documents],
-        )
+            try:
+                client.delete_collection(name=collection_name)
+            except chromadb.errors.NotFoundError:
+                pass
+            collection = client.create_collection(
+                name=collection_name,
+                configuration={"hnsw": {"space": "cosine"}},
+            )
+            if documents:
+                embeddings = embedding_model.embed_documents([document["content"] for document in documents])
+                collection.add(
+                    ids=[document["record_id"] for document in documents],
+                    embeddings=embeddings,
+                    documents=[document["content"] for document in documents],
+                    metadatas=[document["metadata"] for document in documents],
+                )
+        finally:
+            # PersistentClient holds SQLite/HNSW files open on Windows. The
+            # returned index creates its own client below, so release this
+            # temporary build client before handing control back to callers.
+            client.close()
 
         manifest_path = embeddings_output_path or settings.paths.embeddings_json
+        try:
+            portable_persist_path = persist_path.resolve().relative_to(settings.paths.project_dir.resolve())
+        except ValueError:
+            portable_persist_path = persist_path.resolve()
         write_json(
             manifest_path,
             {
                 "backend": "chroma",
                 "embedding_model": settings.embedding_model,
-                "persist_path": str(persist_path),
+                "persist_path": str(portable_persist_path),
                 "collection_name": collection_name,
+                "document_count": len(documents),
                 "documents": documents,
             },
         )
@@ -131,18 +178,32 @@ class LocalEmbeddingIndex:
     @classmethod
     def load(cls, settings: Settings, embeddings_path: Path | None = None) -> "LocalEmbeddingIndex":
         payload = read_json(embeddings_path or settings.paths.embeddings_json)
+        if payload.get("backend") != "chroma":
+            raise ValueError(f"Unsupported retrieval backend: {payload.get('backend')!r}.")
+        persist_path = Path(payload["persist_path"])
+        if not persist_path.is_absolute():
+            persist_path = settings.paths.project_dir / persist_path
         return cls(
             settings=settings,
             collection_name=payload["collection_name"],
             documents=payload["documents"],
-            persist_path=Path(payload["persist_path"]),
+            persist_path=persist_path,
         )
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query must be a non-empty string.")
+        requested_results = self.settings.top_k if top_k is None else top_k
+        if not isinstance(requested_results, int) or isinstance(requested_results, bool) or requested_results <= 0:
+            raise ValueError("top_k must be a positive integer.")
+        collection_size = self.collection.count()
+        if collection_size == 0:
+            return []
+
         query_embedding = self.embedding_model.embed_query(query)
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=top_k or self.settings.top_k,
+            n_results=min(requested_results, collection_size),
             include=["documents", "metadatas", "distances"],
         )
         ids = results.get("ids", [[]])[0]
@@ -158,7 +219,7 @@ class LocalEmbeddingIndex:
                 SearchResult(
                     paper_id=str(metadata["paper_id"]),
                     title=str(metadata["title"]),
-                    score=max(0.0, 1.0 - float(distance or 0.0)),
+                    score=min(1.0, max(0.0, 1.0 - float(distance or 0.0))),
                     content=str(content),
                     metadata=dict(metadata),
                 )
@@ -166,9 +227,21 @@ class LocalEmbeddingIndex:
         return scored
 
     def lookup(self, value: str) -> dict[str, Any] | None:
+        if not isinstance(value, str) or not value.strip():
+            return None
         needle = value.strip().lower()
         if needle in self.documents_by_paper_id:
             return self.documents_by_paper_id[needle]
         if needle in self.documents_by_title:
             return self.documents_by_title[needle]
         return None
+
+    def close(self) -> None:
+        """Release Chroma resources, especially persistent file handles on Windows."""
+        self.client.close()
+
+    def __enter__(self) -> "LocalEmbeddingIndex":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # noqa: ANN001
+        self.close()

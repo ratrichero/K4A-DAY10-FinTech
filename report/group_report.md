@@ -113,7 +113,7 @@ Crossref REST API (Offline Snapshot Fallback)
 | ----------------- | ----------------------------------------------- | ----------------------------- | ------------------------------------ |
 | Baseline pipeline | Thành công (Exit code 0) | 2026-09-25 16:21:26 | `data/reports/phase1_report.md`, `baseline_metrics.json` |
 | Corruption flow   | Thành công (Exit code 0) | 2026-09-25 16:56:56 | `data/reports/corruption_report.md`, `corruption_log.json` (generated_at) |
-| Pytest Test Suite | Thành công (16/16 passed) | 2026-09-25 | `tests/`, log nghiệm thu Phase 5 trong `excute.md` (16/16 PASSED, 113.63s) |
+| Pytest Test Suite | Thành công (16/16 passed) | 2026-09-25 | Tái hiện bằng `python -m pytest tests/` trên thư mục `tests/` |
 | Streamlit Web App | Đang hoạt động | 2026-09-25 17:16:51 | `http://localhost:8501`, `start_app.bat` |
 
 ---

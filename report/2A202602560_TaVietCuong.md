@@ -22,7 +22,7 @@
 | Baseline orchestration | `src/pipelines/phase1.py`, `script/run_phase1.py` | Raw records, các module con | `baseline_metrics.json`, `phase1_report.md`, collection `papers-baseline` | Hoàn thành |
 | Corruption & repair orchestration | `src/pipelines/corruption_flow.py`, `script/run_corruption_flow.py` | Artifacts của Phase 1 (clean CSV, baseline metrics, test set) | `corrupted_metrics.json`, `repaired_metrics.json`, `corruption_report.md`, 2 collection ChromaDB | Hoàn thành |
 | Corruption suite (viết thay TV2 theo Anti-Blocking Protocol, chờ TV2 review) | `src/ingestion/corruption.py` (`corrupt_clean_dataframe`) | `papers_clean.csv` | `papers_clean_corrupted.csv/.json`, `corruption_log.json` | Hoàn thành (pending review) |
-| Nhật ký thực thi | `mydoc/excute.md` | Kết quả chạy từng Phase | Traceability log Phase 0 → Phase 3 | Hoàn thành |
+| Nhật ký thực thi | `data/reports/phase1_report.md`, `data/reports/corruption_report.md` | Kết quả chạy từng Phase | Traceability log Phase 0 → Phase 3 | Hoàn thành |
 
 Chú thích phạm vi: tôi là owner chính của khối **orchestration/integration**. Các module `crossref.py`, `cleaning.py` (TV2), `index.py`, `embeddings.py`, `qa.py` (TV3), `testset.py` (TV4) do thành viên khác sở hữu; tôi có fix tích hợp trên `quality.py`/`reporting.py`/`llm.py` khi chúng chặn pipeline (ghi rõ ở mục 6).
 
@@ -43,7 +43,7 @@ Chú thích phạm vi: tôi là owner chính của khối **orchestration/integr
 | Pipeline corruption→repair 9 bước | `src/pipelines/corruption_flow.py` | End-to-end Exit Code 0, sinh đủ 14+ artifacts, 3 collection ChromaDB tách biệt | `python script/run_corruption_flow.py` |
 | 6 kịch bản corruption deterministic | `src/ingestion/corruption.py` | `data/results/corruption_log.json` ghi đủ 6 kịch bản + paper_id bị ảnh hưởng, corpus 24→21 dòng | Đọc `corruption_log.json`; chạy lại 2 lần log khớp nhau |
 | Fallback report khi reporting chưa xong | `_write_fallback_comparison_report` | Bảng 3 cột luôn được sinh kể cả khi `generate_corruption_report` chưa implement | Tạm mock lỗi → report fallback vẫn xuất hiện |
-| Chạy nghiệm thu 2 pipeline + pytest | `script/*.py`, `tests/` | Exit Code 0 cho cả 2 pipeline; pytest 16/16 passed | Xem log trong `mydoc/excute.md` |
+| Chạy nghiệm thu 2 pipeline + pytest | `script/*.py`, `tests/` | Exit Code 0 cho cả 2 pipeline; pytest 16/16 passed | Chạy lại `python -m pytest tests/` (16/16 PASSED) |
 
 Output cụ thể nhất phần tôi tạo ra: **`data/reports/corruption_report.md`** — bảng đối chiếu 3 trạng thái với số liệu thật, cùng cơ chế đảm bảo nó luôn đúng (đọc key metrics từ `evaluate_pipeline`, fallback khi reporting stub).
 
@@ -55,7 +55,7 @@ Ghép 3 module của 3 thành viên (được viết song song theo data contrac
 
 ### Cách triển khai
 
-`corruption_flow.py` gồm 9 bước, khớp pseudo-code trong `mydoc/plan.md`:
+`corruption_flow.py` gồm 9 bước theo kế hoạch Phase 2:
 
 1. **Preflight gate:** kiểm tra sự tồn tại của 3 artifact Phase 1 (`papers_clean.csv`, `baseline_metrics.json`, `test_set.json`). Thiếu → thoát Exit Code 2 kèm hướng dẫn. Thiết kế này giúp Phase 2 chỉ phụ thuộc *artifact* (không import code `phase1.py`), nên 2 thread làm việc song song không dẫm file của nhau.
 2. Tiêm 6 corruption qua `corrupt_clean_dataframe`, lưu CSV/JSON + log.
@@ -87,7 +87,7 @@ PYTHONIOENCODING=utf-8 LLM_PROVIDER=mock .venv/Scripts/python.exe script/run_cor
 
 - **Kết quả mong đợi:** GX corrupted FAIL, hit rate corrupted giảm sâu, repaired khôi phục ~100%, console in `idempotent repair vs clean corpus: IDENTICAL`.
 - **Kết quả thực tế:** `GX success=False (4/6)` → `hit rate=50.00%` → `hit rate=100.00%` → `IDENTICAL (24 rows)`, Exit Code 0.
-- **Artifact/log:** `data/reports/corruption_report.md`, `data/results/corruption_log.json`, nhật ký đầy đủ trong `mydoc/excute.md`.
+- **Artifact/log:** `data/reports/corruption_report.md`, `data/results/corruption_log.json`.
 
 ## 5. Một quyết định kỹ thuật quan trọng
 
